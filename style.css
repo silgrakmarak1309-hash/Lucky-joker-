@@ -34,7 +34,7 @@ body { background: var(--bg); color: var(--text); overflow: hidden; height: 100v
 input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #374151; background: #111827; color: #fff; margin: 15px 0; outline: none; }
 .google-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #fff; color: #000; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-/* Game Cards - FIXED FOR MIRRORED NUMBERS */
+/* Game Cards - NEW FIX WITH scaleX */
 .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 30px 0; }
 .card { height: 130px; perspective: 1000px; cursor: pointer; }
 .inner { 
@@ -62,17 +62,13 @@ input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #3741
 
 .front { background: linear-gradient(135deg, #4f46e5, #312e81); font-size: 40px; }
 
+/* Yahan humne scaleX(-1) add kiya hai jo number ko seedha kar dega */
 .back { 
     background: var(--card); 
-    transform: rotateY(180deg); 
+    transform: rotateY(180deg) scaleX(-1); 
     font-size: 30px; 
     font-weight: 800; 
     color: var(--gold); 
-}
-
-/* Extra fix to ensure the number looks straight after flip */
-.card.flipped .back {
-    transform: rotateY(180deg);
 }
 
 .card.locked { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
