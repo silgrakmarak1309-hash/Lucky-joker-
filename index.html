@@ -1,397 +1,214 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Lucky Joker Pro - Professional</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    :root {
-      --bg: #090d16; --card: #131b2e; --accent: #facc15; 
-      --purple: #232055; --green: #10b981; --blue: #3b82f6;
-      --border: #1e293b; --text: #94a3b8;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; user-select: none; }
-    body { background: var(--bg); color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
-
-    /* --- Header --- */
-    .header { height: 65px; display: none; justify-content: space-between; align-items: center; padding: 0 15px; background: #0f172a; border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; z-index: 1000; }
-    .coin-box { background: rgba(250, 204, 21, 0.1); padding: 6px 12px; border-radius: 50px; color: var(--accent); font-weight: 800; border: 1px solid var(--accent); font-size: 14px; display: flex; align-items: center; gap: 6px; }
-    .profile-trigger { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--blue); cursor: pointer; overflow: hidden; }
-
-    /* --- Main Container --- */
-    .view { height: 100vh; padding-top: 75px; padding-bottom: 80px; overflow-y: auto; display: flex; flex-direction: column; }
-    .page { display: none; padding: 15px; flex-direction: column; flex: 1; }
-    .active { display: flex !important; }
-
-    /* --- Cards --- */
-    .btn { width: 100%; padding: 14px; border-radius: 15px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .btn-green { background: var(--green); color: #fff; }
-    .btn-accent { background: var(--accent); color: #000; }
-    
-    .card-box { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
-
-    /* --- Flip Cards --- */
-    .flip-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-    .f-card { height: 130px; background: var(--blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-    .f-card.revealed { background: var(--purple); border: 2px solid var(--accent); }
-
-    /* --- Spin Wheel --- */
-    .wheel-wrapper { position: relative; width: 250px; height: 250px; margin: 20px auto; }
-    .wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid var(--card); position: relative; overflow: hidden; transition: 4s cubic-bezier(0.15, 0, 0.15, 1); background: conic-gradient(var(--blue) 0% 14.2%, var(--purple) 14.2% 28.4%, var(--green) 28.4% 42.6%, var(--accent) 42.6% 56.8%, #ef4444 56.8% 71%, #8b5cf6 71% 85.2%, #ec4899 85.2% 100%); }
-    .wheel-pin { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 30px; z-index: 10; filter: drop-shadow(0 0 5px #000); }
-
-    /* --- Avatars --- */
-    .av-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px 0; }
-    .av-item { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; padding: 2px; cursor: pointer; }
-    .av-item.selected { border-color: var(--green); background: rgba(16, 185, 129, 0.2); }
-
-    /* --- Bottom Nav --- */
-    .nav { height: 70px; background: #0f172a; display: none; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; z-index: 1000; }
-    .nav-item { flex: 1; text-align: center; color: var(--text); font-size: 11px; font-weight: 600; cursor: pointer; }
-    .nav-item.active { color: var(--accent); }
-    .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
-
-    /* --- Ad Overlay --- */
-    #ad-box { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-
-    /* --- Sharing --- */
-    .share-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
-    .share-btn { height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; cursor: pointer; }
-  </style>
-</head>
-<body>
-
-  <!-- Ad Overlay -->
-  <div id="ad-box">
-    <div style="font-size: 60px; color: var(--accent); margin-bottom: 15px;"><i class="fas fa-play-circle"></i></div>
-    <h3 id="ad-title">Loading Rewarded Ad...</h3>
-    <p style="color: var(--accent); margin-top: 10px;">Wait <span id="ad-timer">5</span>s for Reward</p>
-  </div>
-
-  <!-- Header -->
-  <div class="header" id="header">
-    <div class="coin-box"><i class="fas fa-coins"></i> <span id="coin-val">0</span></div>
-    <div id="adm-tag" style="font-size: 9px; background: var(--blue); padding: 2px 8px; border-radius: 4px; cursor: pointer; display: none;" onclick="openPage('p-admin')">ADMIN</div>
-    <div class="profile-trigger" onclick="openPage('p-profile')">
-      <img id="header-av" src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" style="width: 100%;">
-    </div>
-  </div>
-
-  <div class="view">
-    
-    <!-- PAGE 1: LOGIN -->
-    <div id="p-login" class="page active" style="justify-content: center; align-items: center;">
-      <div class="card-box" style="text-align: center; width: 100%; max-width: 340px;">
-        <div style="font-size: 60px; margin-bottom: 15px;">🃏</div>
-        <h2 style="margin-bottom: 10px;">Lucky Joker Pro</h2>
-        <p style="color: var(--text); font-size: 12px; margin-bottom: 25px;">Win daily rewards by playing games</p>
-        <input type="email" id="u-email" placeholder="Enter Email" class="btn" style="background:#070b14; border:1px solid var(--border); color:#fff; text-align:center; margin-bottom: 15px;">
-        <button class="btn btn-green" onclick="doLogin()"><i class="fab fa-google"></i> Continue with Google</button>
-      </div>
-    </div>
-
-    <!-- PAGE 2: DASHBOARD -->
-    <div id="p-dash" class="page">
-      <div class="card-box" style="background: linear-gradient(135deg, #312e81, #1e1b4b); display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <h3 style="color:var(--accent)">Daily Bonus</h3>
-          <p style="font-size: 11px; margin-bottom: 10px;">Get 10 coins free daily</p>
-          <button id="daily-btn" class="btn btn-accent" style="width:100px; padding:6px; font-size:12px;" onclick="claimDaily()">CLAIM</button>
-        </div>
-        <i class="fas fa-gift" style="font-size: 50px; opacity: 0.5;"></i>
-      </div>
-
-      <h4 style="margin-bottom: 10px;">Lucky Games</h4>
-      
-      <div class="card-box">
-        <p style="text-align: center; font-size: 13px; margin-bottom: 10px; font-weight: 600;">Flip Card (2 Zero, 1 Winner)</p>
-        <div class="flip-container">
-          <div class="f-card" onclick="playFlip(this)">?</div>
-          <div class="f-card" onclick="playFlip(this)">?</div>
-          <div class="f-card" onclick="playFlip(this)">?</div>
-        </div>
-        <button id="flip-reset" class="btn btn-green" style="display: none;" onclick="resetFlip()">Next Round</button>
-      </div>
-
-      <div class="card-box" style="text-align: center;">
-        <h4>Spin & Win</h4>
-        <div class="wheel-wrapper">
-          <img src="https://cdn-icons-png.flaticon.com/512/8212/8212733.png" class="wheel-pin">
-          <div class="wheel" id="wheel"></div>
-        </div>
-        <button class="btn btn-accent" onclick="spinWheel()">SPIN (1 Ad)</button>
-      </div>
-
-      <p style="text-align: center; font-size: 10px; color: var(--text);">Daily Ads: <span id="ad-count">0</span>/30</p>
-    </div>
-
-    <!-- PAGE 3: REFER & EARN -->
-    <div id="p-refer" class="page">
-      <div class="card-box" style="text-align: center;">
-        <h2 style="color: var(--accent);">Refer & Earn</h2>
-        <p style="color: var(--text); font-size: 12px; margin: 10px 0;">Share with friends and get 50 coins!</p>
-        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 2px dashed var(--accent); font-size: 28px; font-weight: 800; letter-spacing: 5px; color: var(--accent);" id="ref-code-text">REF000</div>
-        
-        <div class="share-row">
-          <div class="share-btn" onclick="share('wa')" style="background: #25d366;"><i class="fab fa-whatsapp"></i></div>
-          <div class="share-btn" onclick="share('ig')" style="background: #e4405f;"><i class="fab fa-instagram"></i></div>
-          <div class="share-btn" onclick="share('tw')" style="background: #1da1f2;"><i class="fab fa-twitter"></i></div>
-          <div class="share-btn" onclick="share('fb')" style="background: #1877f2;"><i class="fab fa-facebook-f"></i></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAGE 4: WALLET -->
-    <div id="p-wallet" class="page">
-      <div class="card-box" style="text-align: center;">
-        <p style="color: var(--text); font-size: 13px;">Current Balance</p>
-        <h1 style="color: var(--green); font-size: 45px;">₹<span id="rs-val">0.00</span></h1>
-        <span style="font-size: 11px; color: var(--accent);">200 Coins = ₹10</span>
-      </div>
-      
-      <div class="card-box">
-        <input type="text" id="upi-id" placeholder="UPI ID (name@paytm)" class="btn" style="background:#070b14; border:1px solid var(--border); color:#fff; text-align:center; margin-bottom: 10px;">
-        <button class="btn btn-green" onclick="withdraw()">WITHDRAW NOW</button>
-      </div>
-
-      <h4>Transaction History</h4>
-      <div id="his-list" style="margin-top: 10px; font-size: 12px; color: var(--text); text-align: center;">No history found.</div>
-    </div>
-
-    <!-- PAGE 5: PROFILE -->
-    <div id="p-profile" class="page">
-      <div class="card-box" style="text-align: center;">
-        <h3>Select Avatar</h3>
-        <p style="font-size: 11px; color: var(--text); margin-bottom: 10px;">Choose your professional character</p>
-        
-        <p style="text-align: left; font-size: 12px; color: var(--accent); margin-top: 10px;">Male Avatars</p>
-        <div class="av-grid" id="av-male-list"></div>
-
-        <p style="text-align: left; font-size: 12px; color: var(--accent); margin-top: 10px;">Female Avatars</p>
-        <div class="av-grid" id="av-female-list"></div>
-      </div>
-
-      <div class="card-box">
-        <p style="font-size: 12px; color: var(--text);">Logged Email</p>
-        <b id="profile-email">---</b>
-      </div>
-
-      <button class="btn" style="background: #ef4444; color: #fff;" onclick="location.reload()">LOGOUT</button>
-    </div>
-
-    <!-- PAGE 6: ADMIN -->
-    <div id="p-admin" class="page">
-      <h3>Admin Dashboard</h3>
-      <div id="adm-data" style="margin-top: 15px;"></div>
-    </div>
-
-  </div>
-
-  <!-- Bottom Navigation -->
-  <div class="nav" id="nav">
-    <div class="nav-item" onclick="openPage('p-refer')"><i class="fas fa-users"></i>Refer</div>
-    <div class="nav-item active" id="n-home" onclick="openPage('p-dash')"><i class="fas fa-home"></i>Home</div>
-    <div class="nav-item" onclick="openPage('p-wallet')"><i class="fas fa-wallet"></i>Wallet</div>
-  </div>
-
-  <script>
-    const AV_M = [4140048, 4140049, 4140050, 4140051, 4140052];
-    const AV_F = [4140047, 4140053, 4140054, 4140055, 4140056];
-    const SPIN_VALS = [1, 3, 8, 9, 10, 2, 4];
-
-    let state = {
-      user: "", coins: 0, ads: 0, daily: false,
-      ref: "LUCKY" + Math.floor(100 + Math.random()*899),
-      av: "https://cdn-icons-png.flaticon.com/512/4140/4140048.png",
-      history: [], lastDate: new Date().toLocaleDateString()
-    };
-
-    let isFlipLocked = false;
-
-    // --- Core Functions ---
-    function saveData() {
-      localStorage.setItem('lucky_state', JSON.stringify(state));
-      updateUI();
-    }
-
-    function updateUI() {
-      document.getElementById('coin-val').innerText = state.coins;
       document.getElementById('ad-count').innerText = state.ads;
       document.getElementById('rs-val').innerText = (state.coins / 20).toFixed(2);
       document.getElementById('header-av').src = state.av;
       if(state.daily) {
-        document.getElementById('daily-btn').innerText = "DONE";
-        document.getElementById('daily-btn').style.background = "#334155";
-        document.getElementById('daily-btn').disabled = true;
-      }
-    }
+        document.getElementById('daily-btn').innerText = "<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Lucky Joker Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
 
-    function showAd(sec, callback) {
-      if(state.ads >= 30) return alert("Daily Ad limit (30/30) reached!");
-      const box = document.getElementById('ad-box');
-      const timer = document.getElementById('ad-timer');
-      box.style.display = 'flex';
-      let left = sec;
-      timer.innerText = left;
-      const int = setInterval(() => {
-        left--; timer.innerText = left;
-        if(left <= 0) {
-          clearInterval(int); box.style.display = 'none';
-          state.ads++; saveData(); callback();
-        }
-      }, 1000);
-    }
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="coin-badge">
+      <i class="fa-solid fa-coins"></i>
+      <span id="userCoins">0</span>
+    </div>
+    <button id="adminToggleBtn" class="admin-badge">ADMIN</button>
+  </header>
 
-    // --- Auth ---
-    function doLogin() {
-      const email = document.getElementById('u-email').value;
-      if(!email.includes('@')) return alert("Enter valid email");
-      state.user = email;
-      document.getElementById('header').style.display = 'flex';
-      document.getElementById('nav').style.display = 'flex';
-      document.getElementById('profile-email').innerText = email;
-      document.getElementById('ref-code-text').innerText = state.ref;
-      if(email === "grejamarak@gmail.com") document.getElementById('adm-tag').style.display = 'block';
-      openPage('p-dash');
-    }
+  <!-- Main Content Container -->
+  <main class="content">
 
-    function openPage(id) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      if(id === 'p-dash') document.getElementById('n-home').classList.add('active');
-      if(id === 'p-admin') loadAdmin();
-      saveData();
-    }
-
-    // --- Games ---
-    function claimDaily() {
-      showAd(5, () => {
-        state.coins += 10; state.daily = true; saveData();
-        alert("10 Coins Added!");
-      });
-    }
-
-    function playFlip(el) {
-      if(isFlipLocked) return;
-      isFlipLocked = true;
-      showAd(5, () => {
-        const pool = [0, 0, Math.floor(Math.random()*12)+1].sort(() => Math.random()-0.5);
-        const cards = document.querySelectorAll('.f-card');
-        cards.forEach((c, i) => {
-          c.innerText = pool[i];
-          c.classList.add('revealed');
-        });
-        const win = parseInt(el.innerText);
-        state.coins += win; saveData();
-        document.getElementById('flip-reset').style.display = 'block';
-      });
-    }
-
-    function resetFlip() {
-      isFlipLocked = false;
-      document.getElementById('flip-reset').style.display = 'none';
-      document.querySelectorAll('.f-card').forEach(c => {
-        c.innerText = "?"; c.classList.remove('revealed');
-      });
-    }
-
-    function spinWheel() {
-      showAd(5, () => {
-        const wheel = document.getElementById('wheel');
-        const randDeg = Math.floor(Math.random()*360) + 1800;
-        wheel.style.transform = `rotate(${randDeg}deg)`;
-        setTimeout(() => {
-          const actualDeg = randDeg % 360;
-          const index = Math.floor((360 - actualDeg) / (360 / 7));
-          const win = SPIN_VALS[index];
-          state.coins += win; saveData();
-          alert("You won " + win + " Coins!");
-        }, 4100);
-      });
-    }
-
-    // --- Wallet ---
-    function withdraw() {
-      const upi = document.getElementById('upi-id').value;
-      if(!upi.includes('@')) return alert("Enter valid UPI ID");
-      if(state.coins < 200) return alert("Min. 200 Coins required!");
-      state.coins -= 200;
-      state.history.push({ amt: 10, status: 'Pending', date: new Date().toLocaleDateString() });
-      saveData();
-      renderHistory();
-      alert("Withdrawal request sent!");
-    }
-
-    function renderHistory() {
-      const list = document.getElementById('his-list');
-      if(state.history.length === 0) return;
-      list.innerHTML = state.history.map(h => `<div style="background:var(--card); padding:10px; border-radius:10px; margin-bottom:5px; display:flex; justify-content:space-between;"><span>₹${h.amt} (${h.date})</span><span style="color:var(--accent)">${h.status}</span></div>`).join('');
-    }
-
-    // --- Avatar ---
-    function loadAvatars() {
-      const mList = document.getElementById('av-male-list');
-      const fList = document.getElementById('av-female-list');
+    <!-- USER APP VIEW -->
+    <div id="userView" class="view-section active">
       
-      mList.innerHTML = AV_M.map(id => {
-        const url = `https://cdn-icons-png.flaticon.com/512/4140/${id}.png`;
-        return `<img src="${url}" class="av-item ${state.av === url ? 'selected' : ''}" onclick="setAv('${url}')">`;
-      }).join('');
-
-      fList.innerHTML = AV_F.map(id => {
-        const url = `https://cdn-icons-png.flaticon.com/512/4140/${id}.png`;
-        return `<img src="${url}" class="av-item ${state.av === url ? 'selected' : ''}" onclick="setAv('${url}')">`;
-      }).join('');
-    }
-
-    function setAv(url) {
-      state.av = url;
-      loadAvatars(); saveData();
-    }
-
-    // --- Refer ---
-    function share(p) {
-      const msg = encodeURIComponent(`Play Lucky Joker Pro & Earn Money! Use my Code: ${state.ref}\nLink: bit.ly/lucky-joker`);
-      let url = "";
-      if(p === 'wa') url = `whatsapp://send?text=${msg}`;
-      else if(p === 'fb') url = `https://www.facebook.com/sharer/sharer.php?u=bit.ly/lucky-joker`;
-      else url = `https://twitter.com/intent/tweet?text=${msg}`;
-      window.open(url, '_blank');
-    }
-
-    // --- Admin ---
-    function loadAdmin() {
-      const div = document.getElementById('adm-data');
-      div.innerHTML = `
-        <div class="card-box" style="font-size:12px;">
-          <p><b>User ID:</b> ${state.user}</p>
-          <p><b>Total Coins:</b> ${state.coins}</p>
-          <p><b>Ads Watched:</b> ${state.ads}/30</p>
-          <p><b>Refer Code:</b> ${state.ref}</p>
+      <!-- Watch Ads & Earn -->
+      <section class="card-section">
+        <h3><i class="fa-solid fa-tv"></i> Watch & Earn</h3>
+        <div class="watch-earn-card">
+          <div class="watch-info">
+            <h4>Watch Video Ads</h4>
+            <p>Earn +10 Coins per Ad</p>
+          </div>
+          <button id="watchAdBtn" class="btn btn-primary"><i class="fa-solid fa-play"></i> Watch Ad</button>
         </div>
-      `;
-    }
+      </section>
 
-    // Init
-    window.onload = () => {
-      const saved = localStorage.getItem('lucky_state');
-      if(saved) {
-        const parsed = JSON.parse(saved);
-        if(parsed.lastDate === new Date().toLocaleDateString()) {
-          state = parsed;
-        } else {
-          state = parsed; state.ads = 0; state.daily = false; state.lastDate = new Date().toLocaleDateString();
-        }
-      }
-      loadAvatars();
-      updateUI();
-      renderHistory();
-    };
-  </script>
+      <!-- Lucky Games -->
+      <section class="card-section">
+        <h3><i class="fa-solid fa-gamepad"></i> Lucky Games</h3>
+        
+        <!-- Flip Card Section -->
+        <div class="game-card">
+          <h4>Flip Card (1 Winner, 2 Locked)</h4>
+          <div class="flip-cards-container">
+            <div class="flip-card" data-index="0">
+              <div class="card-inner">
+                <div class="card-front"><i class="fa-solid fa-question"></i></div>
+                <div class="card-back" id="cardResult0">?</div>
+              </div>
+            </div>
+            <div class="flip-card locked" data-index="1">
+              <div class="card-inner">
+                <div class="card-front"><i class="fa-solid fa-lock"></i></div>
+                <div class="card-back" id="cardResult1">?</div>
+              </div>
+            </div>
+            <div class="flip-card locked" data-index="2">
+              <div class="card-inner">
+                <div class="card-front"><i class="fa-solid fa-lock"></i></div>
+                <div class="card-back" id="cardResult2">?</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spin & Win -->
+        <div class="game-card">
+          <h4>Spin & Win</h4>
+          <div class="wheel-wrapper">
+            <div class="pointer"><i class="fa-solid fa-caret-down"></i></div>
+            <div id="wheel" class="wheel"></div>
+          </div>
+          <button id="spinBtn" class="btn btn-warning"><i class="fa-solid fa-rotate"></i> SPIN (1 Ad)</button>
+          <p class="sub-text">Daily Limit: <span id="dailyAdsCount">0</span>/30</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- REFER VIEW -->
+    <div id="referView" class="view-section">
+      <div class="card-section">
+        <h3><i class="fa-solid fa-user-plus"></i> Refer & Earn</h3>
+        <div class="refer-box">
+          <p>Share your code with friends and earn <strong>50 Coins</strong> on each referral!</p>
+          <div class="refer-code-box">
+            <span id="myReferCode">LUCKY825</span>
+            <button id="copyReferBtn" class="btn btn-secondary"><i class="fa-solid fa-copy"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET & WITHDRAW VIEW -->
+    <div id="walletView" class="view-section">
+      <div class="card-section">
+        <h3><i class="fa-solid fa-wallet"></i> Wallet & Redeem</h3>
+        <div class="wallet-balance">
+          <p>Total Balance</p>
+          <h2><i class="fa-solid fa-coins"></i> <span id="walletCoins">0</span> Coins</h2>
+        </div>
+        <form id="withdrawForm" class="withdraw-form">
+          <div class="input-group">
+            <label>Payment Method</label>
+            <select id="payoutMethod">
+              <option value="UPI">UPI / GPay / PhonePe</option>
+              <option value="Paytm">Paytm Wallet</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Enter Number / UPI ID</label>
+            <input type="text" id="payoutDetails" placeholder="e.g. 9876543210@upi" required>
+          </div>
+          <div class="input-group">
+            <label>Coins to Redeem (Min 100)</label>
+            <input type="number" id="payoutCoins" min="100" placeholder="100" required>
+          </div>
+          <button type="submit" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Submit Request</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL VIEW -->
+    <div id="adminView" class="view-section">
+      <h2>Admin Dashboard</h2>
+      
+      <!-- AdMob Configuration -->
+      <div class="admin-card">
+        <h4><i class="fa-rectangle-ad"></i> AdMob Ad Settings</h4>
+        <div class="input-group">
+          <label>App ID</label>
+          <input type="text" id="admAppId" placeholder="ca-app-pub-xxxxxxxx~xxxxxxxx">
+        </div>
+        <div class="input-group">
+          <label>Rewarded Ad Unit ID</label>
+          <input type="text" id="admRewardedId" placeholder="ca-app-pub-xxxxxxxx/xxxxxxxx">
+        </div>
+        <button id="saveAdmobBtn" class="btn btn-primary">Save Settings</button>
+      </div>
+
+      <!-- User Records -->
+      <div class="admin-card">
+        <h4><i class="fa-users"></i> Registered Users Records</h4>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Coins</th>
+                <th>Refer Code</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminUserTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Withdraw Requests -->
+      <div class="admin-card">
+        <h4><i class="fa-hand-holding-dollar"></i> Withdraw Requests</h4>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Method & Details</th>
+                <th>Coins</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminWithdrawTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Compact Coin Win Popup Modal -->
+  <div id="rewardModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-icon"><i class="fa-solid fa-trophy"></i></div>
+      <h3>Congratulations!</h3>
+      <p>You won <strong id="rewardCoinText">+10</strong> Coins!</p>
+      <button id="closeModalBtn" class="btn btn-primary btn-sm">OK</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-target="userView">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </button>
+    <button class="nav-item" data-target="referView">
+      <i class="fa-solid fa-user-group"></i>
+      <span>Refer</span>
+    </button>
+    <button class="nav-item" data-target="walletView">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Wallet</span>
+    </button>
+  </nav>
+
+  <script src="script.js"></script>
 </body>
-</html>
+        </html>
