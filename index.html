@@ -1,1 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lucky Joker Pro - Fixed Edition</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --card: #1f2937;
+      --primary: #6366f1;
+      --gold: #f59e0b;
+      --accent: #facc15; 
+      --green: #10b981; 
+      --red: #ef4444; 
+      --blue: #3b82f6;
+      --border: #374151; 
+      --text: #94a3b8;
+    }
 
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Inter', sans-serif; user-select: none; }
+    body { background: var(--bg); color: #fff; height: 100vh; overflow: hidden; direction: ltr !important; }
+
+    /* Main Scrolling & Viewport Container */
+    .app-container { height: 100vh; display: flex; flex-direction: column; }
+    .view { 
+      height: calc(100vh - 70px); 
+      padding: 15px; 
+      padding-top: 85px; 
+      padding-bottom: 120px; 
+      overflow-y: auto; 
+      -webkit-overflow-scrolling: touch;
+    }
+    .page { display: none; flex-direction: column; animation: slideUp 0.3s ease; }
+    .active { display: flex !important; }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Custom Toast */
+    #toast {
+      position: fixed; top: 25px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #000; padding: 12px 25px; border-radius: 50px;
+      font-size: 14px; font-weight: 700; z-index: 10001; display: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s forwards;
+    }
+    @keyframes slideIn { from { top: -60px; opacity: 0; } to { top: 25px; opacity: 1; } }
+
+    /* Header & Navigation */
+    .header { height: 75px; display: none; justify-content: space-between; align-items: center; padding: 0 20px; background: #0b1120; border-bottom: 1px solid var(--border); position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
+    .coin-badge { background: rgba(250, 204, 21, 0.1); padding: 8px 18px; border-radius: 50px; color: var(--accent); font-weight: 700; border: 1.5px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+
+    .nav { height: 70px; background: var(--card); display: none; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; }
+    .nav-item { color: var(--text); text-align: center; font-size: 11px; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .nav-item i { font-size: 22px; display: block; margin-bottom: 3px; }
+    .nav-item.active { color: var(--accent); }
+
+    /* Bar Ads */
+    .bar-ad {
+      width: 100%; height: 75px; background: #111827; border-radius: 15px;
+      margin: 15px 0; display: flex; align-items: center; padding: 0 12px;
+      border: 1px solid var(--border); position: relative; overflow: hidden;
+    }
+    .ad-badge { position: absolute; top: 4px; right: 8px; font-size: 8px; background: var(--accent); color: #000; padding: 1px 5px; border-radius: 3px; font-weight: 800; }
+    .ad-icon { width: 45px; height: 45px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #1e40af); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 12px; flex-shrink: 0; }
+    .ad-content { flex-grow: 1; overflow: hidden; }
+    .ad-content b { font-size: 13px; display: block; color: #fff; white-space: nowrap; }
+    .ad-content span { font-size: 10px; color: var(--text); line-height: 1; }
+    .ad-btn { background: var(--blue); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; margin-left: 10px; cursor: pointer; }
+
+    /* FIX: Flip Cards Direction & Grid Layout */
+    .flip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0; width: 100%; }
+    .f-card { 
+      height: 120px; 
+      background: #1e293b url('https://cdn-icons-png.flaticon.com/512/3233/3233481.png') center/50% no-repeat;
+      border-radius: 12px; cursor: pointer; transition: transform 0.4s; border: 2px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: transparent;
+    }
+    .f-card.reveal { 
+      background: var(--card) !important; color: var(--accent) !important; border: 2px solid var(--accent); pointer-events: none;
+      transform: scale(1.02);
+    }
+
+    /* Avatar Grid Fix */
+    .av-grid { display: flex; gap: 12px; margin-top: 10px; overflow-x: auto; padding: 5px 0; }
+    .av-item { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; flex-shrink: 0; transition: 0.2s; }
+    .av-item.selected { border-color: var(--accent); transform: scale(1.08); }
+
+    /* Social Share Grid */
+    .share-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 25px; }
+    .share-item { 
+      height: 55px; border-radius: 15px; display: flex; align-items: center; justify-content: center; 
+      font-size: 22px; color: #fff; cursor: pointer; transition: 0.3s;
+    }
+    .share-item:active { transform: scale(0.9); }
+    .wa { background: #25D366; } .ig { background: #E4405F; } .tw { background: #1DA1F2; } .fb { background: #1877F2; }
+
+    /* Utils & Cards */
+    .card { background: var(--card); border-radius: 24px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .btn { width: 100%; padding: 16px; border-radius: 18px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+    .btn-accent { background: var(--accent); color: #000; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: #fff; }
+    input { width: 100%; padding: 16px; border-radius: 18px; background: #05070a; border: 1px solid var(--border); color: #fff; margin-bottom: 15px; text-align: center; outline: none; }
+
+    /* Admin Table Fix */
+    .admin-table-container { overflow-x: auto; margin-top: 10px; border-radius: 12px; border: 1px solid var(--border); }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; background: #0f172a; }
+    .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+    .admin-table th { color: var(--accent); font-weight: 700; }
+
+    #ad-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 99999; display: none; flex-direction: column; justify-content: center; align-items: center; }
+
+    /* Watermark Removers */
+    iframe[src*="appsgeyser"], iframe[src*="webintoapp"], div[id*="appsgeyser"], div[class*="appsgeyser"], div[id*="webintoapp"], #appsgeyser_banner, .appsgeyser_banner, body > div[style*="z-index: 99999"], body > iframe:last-child {
+      display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0px !important; width: 0px !important; pointer-events: none !important; position: absolute !important; top: -9999px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toast">Reward Collected!</div>
+
+  <!-- Video Ad Screen -->
+  <div id="ad-wrapper">
+    <div style="font-size: 60px; color: var(--accent); margin-bottom: 20px;"><i class="fas fa-play-circle"></i></div>
+    <h3>Video Ad Playing...</h3>
+    <p style="color: var(--accent); margin-top: 10px;">Reward in <span id="ad-sec">5</span>s</p>
+  </div>
+
+  <!-- Header -->
+  <div class="header" id="header">
+    <div class="coin-badge"><i class="fas fa-coins"></i> <span id="coin-val">0</span></div>
+    <div id="adm-tag" style="background: var(--blue); padding: 5px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; display: none; cursor: pointer;" onclick="openPage('p-admin')">ADMIN</div>
+    <div onclick="openPage('p-profile')" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent); overflow: hidden; background: #fff; cursor: pointer;">
+      <img id="user-av" src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" style="width: 100%;">
+    </div>
+  </div>
+
+  <div class="view">
+    
+    <!-- LOGIN PAGE -->
+    <div id="p-login" class="page active" style="padding: 0; min-height: 80vh; justify-content: center; align-items: center;">
+      <div style="width: 100%; max-width: 380px; padding: 40px 30px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(15px); border-radius: 35px; border: 1px solid var(--border); text-align: center;">
+        <div style="font-size: 65px; margin-bottom: 15px;">🃏</div>
+        <h1 style="font-weight: 800; letter-spacing: -1px; margin-bottom: 30px;">Lucky Joker Pro</h1>
+        <input type="email" id="u-email" placeholder="Gmail ID">
+        <input type="text" id="u-ref-input" placeholder="Referral Code (Optional)">
+        <button class="btn btn-accent" onclick="handleLogin()">Sign in with Google</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="p-dash" class="page">
+      
+      <div class="bar-ad">
+        <span class="ad-badge">AD</span>
+        <div class="ad-icon" style="background: linear-gradient(135deg, #10b981, #065f46);"><i class="fas fa-gamepad"></i></div>
+        <div class="ad-content">
+          <b>Pro Gamer Reward</b>
+          <span>Play 10min, Earn ₹20 Paytm Cash</span>
+        </div>
+        <button class="ad-btn" style="background: var(--green);">Play Now</button>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, #1e1b4b, #312e81); border: none;">
+        <h3>Daily Check-in</h3>
+        <p style="font-size: 11px; opacity: 0.8;">2 Ads = 10 Coins.</p>
+        <div id="daily-status" style="font-size: 10px; font-weight: 800; color: var(--accent); margin-top: 5px;">Progress: 0/2</div>
+        <button id="claim-btn" class="btn btn-accent" style="height: 45px; margin-top: 10px;" onclick="doDaily()">Claim Reward</button>
+      </div>
+
+      <div class="card" style="text-align: center; border: 1px solid var(--green);">
+        <h4 style="color: var(--green);"><i class="fas fa-video"></i> Rewarded Video Wall</h4>
+        <button class="btn btn-outline" style="color: var(--green); border-color: var(--green); margin-top: 10px;" onclick="watchVid()">Watch & Earn</button>
+      </div>
+
+      <h4 style="margin: 10px 0;">Lucky Joker Flip</h4>
+      <div class="card" style="text-align: center;">
+        <div class="flip-grid">
+          <div class="f-card" onclick="flipCard(this, 0)"></div>
+          <div class="f-card" onclick="flipCard(this, 1)"></div>
+          <div class="f-card" onclick="flipCard(this, 2)"></div>
+        </div>
+        <button id="reset-flip" class="btn btn-outline" style="display: none; height: 42px;" onclick="resetCards()">Next Round</button>
+      </div>
+
+      <div class="bar-ad">
+        <span class="ad-badge">AD</span>
+        <div class="ad-icon"><i class="fas fa-rocket"></i></div>
+        <div class="ad-content">
+          <b>Booster Unlock</b>
+          <span>Earn 2x coins on all games today</span>
+        </div>
+        <button class="ad-btn">Unlock</button>
+      </div>
+
+      <!-- Spin Wheel Section -->
+      <div class="card" style="text-align: center; margin-bottom: 40px;">
+        <h4>Lucky Spin</h4>
+        <div style="width: 170px; height: 170px; margin: 25px auto; position: relative;">
+          <img src="https://cdn-icons-png.flaticon.com/512/8212/8212733.png" style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 28px; z-index: 10;">
+          <div id="wheel" style="width: 100%; height: 100%; border-radius: 50%; border: 6px solid #1e293b; transition: 4s cubic-bezier(0.15, 0, 0.15, 1); background: conic-gradient(var(--blue) 0 60deg, var(--green) 60deg 120deg, var(--accent) 120deg 180deg, var(--red) 180deg 240deg, #8b5cf6 240deg 300deg, #ec4899 300deg 360deg);"></div>
+        </div>
+        <button class="btn btn-accent" onclick="spinNow()">Spin Wheel (1 Ad)</button>
+      </div>
+
+    </div>
+
+    <!-- REFER PAGE -->
+    <div id="p-refer" class="page">
+      <div class="card" style="text-align: center;">
+        <h2 style="color: var(--accent);">Refer & Earn 50</h2>
+        <p style="font-size: 12px; color: var(--text); margin: 20px 0;">Referrer gets 50 coins after your friend completes 10 ads threshold.</p>
+        <div style="background: #05070a; padding: 25px; border-radius: 20px; border: 2.5px dashed var(--accent); font-size: 32px; font-weight: 800; letter-spacing: 5px; color: var(--accent); margin-bottom: 25px;" id="my-ref-display">---</div>
+        
+        <div class="share-grid">
+          <div class="share-item wa" onclick="share('wa')"><i class="fab fa-whatsapp"></i></div>
+          <div class="share-item ig" onclick="share('ig')"><i class="fab fa-instagram"></i></div>
+          <div class="share-item tw" onclick="share('tw')"><i class="fab fa-twitter"></i></div>
+          <div class="share-item fb" onclick="share('fb')"><i class="fab fa-facebook-f"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET PAGE -->
+    <div id="p-wallet" class="page">
+      <div class="card" style="text-align: center;">
+        <small style="color: var(--text);">Wallet Cash</small>
+        <h1 style="font-size: 45px; color: var(--green);">₹<span id="rs-val">0.00</span></h1>
+        <p style="font-size: 11px; color: var(--accent);">250 Coins = ₹10 | Service Fee: ₹1</p>
+      </div>
+      <div class="card">
+        <input type="text" id="upi-id" placeholder="UPI ID (e.g. name@paytm)">
+        <button class="btn btn-accent" onclick="doWithdraw()">Withdraw ₹10 (1 Ad)</button>
+      </div>
+      <h4 style="margin-bottom: 10px;">History</h4>
+      <div id="his-list"></div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="p-profile" class="page">
+      <div class="card">
+        <h3 id="prof-uid" style="color: var(--accent);">UID: ---</h3>
+        <p style="font-size: 11px; color: var(--text); margin-bottom: 15px;" id="prof-email-txt"></p>
+        <p style="font-size: 11px; color: var(--accent);">Male Avatars</p>
+        <div class="av-grid" id="av-male"></div>
+        <p style="font-size: 11px; color: var(--accent); margin-top: 15px;">Female Avatars</p>
+        <div class="av-grid" id="av-female"></div>
+      </div>
+      <button class="btn btn-outline" style="color: var(--red); border-color: var(--red);" onclick="location.reload()">Logout</button>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div id="p-admin" class="page">
+      <h2 style="color: var(--accent);">Admin Dashboard</h2>
+      <div class="card" style="padding: 15px; margin-top: 15px;">
+        <h4>User Data Record</h4>
+        <div class="admin-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>UID</th>
+                <th>Gmail</th>
+                <th>Coins</th>
+                <th>Ads</th>
+              </tr>
+            </thead>
+            <tbody id="user-record-list"></tbody>
+          </table>
+        </div>
+      </div>
+      <h4 style="margin-top: 20px; color: var(--accent);">Withdrawal Requests</h4>
+      <div id="adm-req-list"></div>
+    </div>
+
+  </div>
+
+  <!-- Navbar -->
+  <div class="nav" id="nav">
+    <div class="nav-item" onclick="openPage('p-refer')"><i class="fas fa-users"></i>Refer</div>
+    <div class="nav-item active" id="n-home" onclick="openPage('p-dash')"><i class="fas fa-home"></i>Home</div>
+    <div class="nav-item" onclick="openPage('p-wallet')"><i class="fas fa-wallet"></i>Wallet</div>
+  </div>
+
+  <script>
+    const M_AVS = [4140048, 4140049, 4140050, 4140051, 4140052];
+    const F_AVS = [4140047, 4140053, 4140054, 4140055, 4140056];
+
+    let state = {
+      uid: "USER-" + Math.floor(1000 + Math.random()*8999),
+      user: "", coins: 0, totalAds: 0, dAds: 0, dClaim: false,
+      ref: "JOKER" + Math.floor(100+Math.random()*899),
+      referredBy: "", bonusReleased: false,
+      av: "https://cdn-icons-png.flaticon.com/512/4140/4140048.png",
+      history: [], lastDate: new Date().toLocaleDateString()
+    };
+
+    function notify(m, c="var(--green)") {
+      const t = document.getElementById('toast');
+      t.innerText = m; t.style.background = c; t.style.display = 'block';
+      setTimeout(() => t.style.display='none', 3000);
+    }
+
+    function save() {
+      localStorage.setItem('lucky_joker_user_session', JSON.stringify(state));
+      let db = JSON.parse(localStorage.getItem('joker_global_db') || '[]');
+      let i = db.findIndex(u => u.user.toLowerCase() === state.user.toLowerCase());
+      if(i > -1) db[i] = state; else db.push(state);
+      localStorage.setItem('joker_global_db', JSON.stringify(db));
+      render();
+    }
+
+    function render() {
+      document.getElementById('coin-val').innerText = state.coins;
+      document.getElementById('rs-val').innerText = (state.coins/25).toFixed(2);
+      document.getElementById('user-av').src = state.av;
+      document.getElementById('daily-status').innerText = `Progress: ${state.dAds}/2`;
+      document.getElementById('prof-uid').innerText = "UID: " + state.uid;
+      document.getElementById('prof-email-txt').innerText = state.user;
+      if(state.dClaim) {
+        document.getElementById('claim-btn').innerText = "CLAIMED";
+        document.getElementById('claim-btn').disabled = true;
+      }
+      if(state.referredBy && !state.bonusReleased && state.totalAds >= 10) {
+          state.bonusReleased = true; notify("Bonus Unlocked for Friend!"); save();
+      }
+    }
+
+    function showAd(sec, cb) {
+      const el = document.getElementById('ad-wrapper');
+      const time = document.getElementById('ad-sec');
+      el.style.display = 'flex';
+      let left = sec; time.innerText = left;
+      const int = setInterval(() => {
+        left--; time.innerText = left;
+        if(left <= 0) {
+          clearInterval(int); el.style.display = 'none';
+          state.totalAds++; save(); cb();
+        }
+      }, 1000);
+    }
+
+    /* GMAIL DUPLICATE FIX */
+    function handleLogin() {
+      const e = document.getElementById('u-email').value.trim().toLowerCase();
+      const r = document.getElementById('u-ref-input').value.trim();
+      if(!e.includes('@')) return notify("Invalid Email", "var(--red)");
+      
+      let db = JSON.parse(localStorage.getItem('joker_global_db') || '[]');
+      let existingUser = db.find(u => u.user.toLowerCase() === e);
+
+      if(existingUser) {
+        state = existingUser;
+      } else {
+        state.user = e;
+        if(r && !localStorage.getItem('joker_device_ref')) {
+          state.referredBy = r; localStorage.setItem('joker_device_ref', 'true');
+        }
+      }
+
+      document.getElementById('my-ref-display').innerText = state.ref;
+      document.getElementById('header').style.display = 'flex';
+      document.getElementById('nav').style.display = 'flex';
+      if(e === "grejamarak@gmail.com") document.getElementById('adm-tag').style.display = 'block';
+      
+      save();
+      openPage('p-dash');
+    }
+
+    function openPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if(id === 'p-dash') document.getElementById('n-home').classList.add('active');
+      if(id === 'p-wallet') renderHistory();
+      if(id === 'p-profile') renderAvatars();
+      if(id === 'p-admin') renderAdmin();
+      save();
+    }
+
+    function doDaily() {
+      if(state.dAds < 2) showAd(5, () => { state.dAds++; save(); notify("Ad Completed"); });
+      else { state.coins += 10; state.dClaim = true; save(); notify("Daily Reward Added"); }
+    }
+
+    function watchVid() { showAd(10, () => { state.coins += 3; save(); notify("3 Coins Added"); }); }
+
+    let flipLocked = false;
+    function flipCard(el, idx) {
+      if(flipLocked) return;
+      flipLocked = true;
+      showAd(5, () => {
+        const pool = [0, 0, Math.floor(Math.random()*12)+1].sort(() => Math.random()-0.5);
+        const win = pool[idx];
+        el.innerText = win; el.classList.add('reveal');
+        state.coins += win; save();
+        notify(win > 0 ? `Win ${win} Coins!` : "Opps! Zero");
+        document.getElementById('reset-flip').style.display = 'block';
+      });
+    }
+
+    function resetCards() {
+      flipLocked = false;
+      document.getElementById('reset-flip').style.display = 'none';
+      document.querySelectorAll('.f-card').forEach(c => { c.innerText = ""; c.classList.remove('reveal'); });
+    }
+
+    function spinNow() {
+      showAd(5, () => {
+        const w = document.getElementById('wheel');
+        const deg = Math.floor(Math.random()*360) + 1800;
+        w.style.transform = `rotate(${deg}deg)`;
+        setTimeout(() => {
+          const win = Math.floor(Math.random()*10)+1;
+          state.coins += win; save(); notify(`Won ${win} Coins`);
+        }, 4100);
+      });
+    }
+
+    function doWithdraw() {
+      const upi = document.getElementById('upi-id').value;
+      if(!upi.includes('@')) return notify("Invalid UPI", "var(--red)");
+      if(state.coins < 250) return notify("Min 250 Coins required", "var(--red)");
+      showAd(5, () => {
+        state.coins -= 250;
+        state.history.unshift({ id: Date.now(), upi: upi, status: "Pending", date: new Date().toLocaleString() });
+        save(); renderHistory(); notify("Withdraw Request Sent");
+      });
+    }
+
+    function renderHistory() {
+      const l = document.getElementById('his-list');
+      if(state.history.length === 0) return l.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:11px;'>No data.</p>";
+      l.innerHTML = state.history.map(h => `
+        <div class="card" style="padding:12px; font-size:11px; display:flex; justify-content:space-between; align-items:center;">
+          <div><b>₹9.00 Net</b><br><span style="opacity:0.6">${h.date}</span></div>
+          <b style="color:${h.status==='Success'?'#10b981':h.status==='Rejected'?'#ef4444':'#facc15'}">${h.status}</b>
+        </div>
+      `).join('');
+    }
+
+    function renderAvatars() {
+      const m = document.getElementById('av-male'), f = document.getElementById('av-female');
+      m.innerHTML = M_AVS.map(id => {
+        const url = `https://cdn-icons-png.flaticon.com/512/4140/${id}.png`;
+        return `<img src="${url}" class="av-item ${state.av === url ? 'selected' : ''}" onclick="setAv('${url}')">`;
+      }).join('');
+      f.innerHTML = F_AVS.map(id => {
+        const url = `https://cdn-icons-png.flaticon.com/512/4140/${id}.png`;
+        return `<img src="${url}" class="av-item ${state.av === url ? 'selected' : ''}" onclick="setAv('${url}')">`;
+      }).join('');
+    }
+    function setAv(u) { state.av = u; renderAvatars(); save(); }
+
+    function renderAdmin() {
+      const db = JSON.parse(localStorage.getItem('joker_global_db') || '[]');
+      const tbody = document.getElementById('user-record-list');
+      tbody.innerHTML = db.map(u => `
+        <tr>
+          <td>${u.uid}</td>
+          <td>${u.user ? u.user.split('@')[0] : 'User'}...</td>
+          <td>${u.coins}</td>
+          <td>${u.totalAds}</td>
+        </tr>
+      `).join('');
+      
+      const p = db.flatMap(u => u.history || []).filter(h => h.status === 'Pending');
+      const l = document.getElementById('adm-req-list');
+      l.innerHTML = p.length === 0 ? "<p style='font-size:11px; opacity:0.5;'>No requests.</p>" : 
+        p.map(h => `
+          <div class="card" style="padding:15px; border-left:4px solid var(--accent);">
+            <b>UPI:</b> ${h.upi} | <b>Net:</b> ₹9.00<br>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button class="btn" style="background:var(--green); color:#fff; padding:8px; font-size:10px;" onclick="admAction(${h.id}, 'Success')">APPROVE</button>
+              <button class="btn" style="background:var(--red); color:#fff; padding:8px; font-size:10px;" onclick="admAction(${h.id}, 'Rejected')">REJECT</button>
+            </div>
+          </div>
+        `).join('');
+    }
+
+    function admAction(id, stat) {
+      let db = JSON.parse(localStorage.getItem('joker_global_db') || '[]');
+      db.forEach(u => {
+        if(u.history) {
+          let idx = u.history.findIndex(h => h.id === id);
+          if(idx !== -1) {
+            u.history[idx].status = stat;
+            if(stat === 'Rejected') u.coins += 250;
+          }
+        }
+      });
+      localStorage.setItem('joker_global_db', JSON.stringify(db));
+
+      let idx = state.history.findIndex(h => h.id === id);
+      if(idx !== -1) {
+        state.history[idx].status = stat;
+        if(stat === 'Rejected') state.coins += 250;
+      }
+      
+      save(); renderAdmin(); notify("Action Completed");
+    }
+
+    function share(platform) {
+      const text = encodeURIComponent(`Play Lucky Joker Pro & Earn Cash! 🃏\nRefer Code: ${state.ref}\nLink: bit.ly/luckyjoker`);
+      let url = "";
+      if(platform === 'wa') url = `whatsapp://send?text=${text}`;
+      else if(platform === 'fb') url = `https://www.facebook.com/sharer/sharer.php?u=bit.ly/luckyjoker`;
+      else if(platform === 'tw') url = `https://twitter.com/intent/tweet?text=${text}`;
+      else url = `https://www.instagram.com/reels/`;
+      window.open(url, '_blank');
+    }
+
+    window.onload = () => {
+      const s = localStorage.getItem('lucky_joker_user_session');
+      if(s) {
+        const p = JSON.parse(s);
+        if(p.lastDate === new Date().toLocaleDateString()) state = p;
+        else { state = p; state.dAds = 0; state.dClaim = false; state.lastDate = new Date().toLocaleDateString(); }
+      }
+      render();
+    };
+  </script>
+</body>
+</html>
