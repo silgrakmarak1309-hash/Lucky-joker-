@@ -1,127 +1,194 @@
-let coins = 0;
-let adsWatched = 0;
-let currentUser = "";
-let isGameLocked = false;
-const ADMIN_EMAIL = "grejamarak@gmail.com";
+// State Management
+let userData = JSON.parse(localStorage.getItem('luckyUser')) || {
+  id: 'user_' + Math.floor(1000 + Math.random() * 9000),
+  coins: 100,
+  adsWatched: 0,
+  referCode: 'LUCKY' + Math.floor(100 + Math.random() * 900)
+};
 
-// Simulation of App States
-function simLogin() {
-    const email = document.getElementById('login-email').value;
-    if(!email.includes('@')) return alert("Enter valid email");
-    currentUser = email;
-    document.getElementById('page-login').style.display = 'none';
-    document.getElementById('app-content').style.display = 'block';
-    document.getElementById('user-email').innerText = email;
-    document.getElementById('display-name').innerText = email.split('@')[0];
-    
-    if(email === ADMIN_EMAIL) document.getElementById('admin-tag').style.display = 'block';
-    switchPage('page-home');
-}
+let allUsers = JSON.parse(localStorage.getItem('adminUsers')) || [userData];
+let withdrawRequests = JSON.parse(localStorage.getItem('withdrawRequests')) || [];
+let admobConfig = JSON.parse(localStorage.getItem('admobConfig')) || {
+  appId: '',
+  rewardedId: ''
+};
 
-function switchPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
+// Elements
+const userCoinsEl = document.getElementById('userCoins');
+const walletCoinsEl = document.getElementById('walletCoins');
+const dailyAdsCountEl = document.getElementById('dailyAdsCount');
+const rewardModal = document.getElementById('rewardModal');
+const rewardCoinText = document.getElementById('rewardCoinText');
 
-// Sequential Ad Logic
-function runAdSequence(count, callback) {
-    let currentAd = 0;
-    
-    function showNextAd() {
-        if (currentAd < count) {
-            currentAd++;
-            const overlay = document.getElementById('ad-overlay');
-            const timerText = document.getElementById('ad-timer');
-            const statusText = document.getElementById('ad-status');
-            
-            overlay.style.display = 'flex';
-            statusText.innerText = `Watching Ad ${currentAd} of ${count}`;
-            
-            let timeLeft = 5;
-            timerText.innerText = `Please wait ${timeLeft}s`;
-            
-            const timer = setInterval(() => {
-                timeLeft--;
-                timerText.innerText = `Please wait ${timeLeft}s`;
-                if(timeLeft <= 0) {
-                    clearInterval(timer);
-                    overlay.style.display = 'none';
-                    adsWatched++;
-                    updateUI();
-                    showNextAd(); // Recursive call for next ad
-                }
-            }, 1000);
-        } else {
-            callback(); // All ads finished
-        }
-    }
-    showNextAd();
-}
-
-// Game Logic
-function handleFlip(card, index) {
-    if(isGameLocked || card.classList.contains('flipped')) return;
-    isGameLocked = true;
-
-    // Lock other 2 cards immediately
-    document.querySelectorAll('.card').forEach((c, i) => {
-        if(i !== index) c.classList.add('locked');
-    });
-
-    runAdSequence(1, () => {
-        // Result calculation: 1 Win, 2 Lose
-        let results = [0, 0, Math.floor(Math.random() * 12) + 1];
-        results = results.sort(() => Math.random() - 0.5);
-        
-        const allCards = document.querySelectorAll('.card');
-        allCards.forEach((c, i) => {
-            c.querySelector('.back').innerText = results[i];
-            c.classList.add('flipped');
-        });
-
-        coins += results[index];
-        updateUI();
-        document.getElementById('next-round').style.display = 'block';
-    });
-}
-
-function resetGame() {
-    isGameLocked = false;
-    document.getElementById('next-round').style.display = 'none';
-    document.querySelectorAll('.card').forEach(c => {
-        c.classList.remove('flipped', 'locked');
-    });
-}
-
-// Daily Bonus Sequence (2 Ads)
-function claimDailySequence() {
-    const btn = document.getElementById('daily-btn');
-    runAdSequence(2, () => {
-        const bonus = Math.floor(Math.random() * 41) + 10;
-        coins += bonus;
-        btn.disabled = true;
-        btn.innerText = "Claimed ✅";
-        alert(`You got ${bonus} coins!`);
-        updateUI();
-    });
-}
-
+// Initial Load
 function updateUI() {
-    document.getElementById('coin-count').innerText = coins;
-    document.getElementById('rs-bal').innerText = (coins / 20).toFixed(2);
-    document.getElementById('stat-ads').innerText = adsWatched;
+  userCoinsEl.textContent = userData.coins;
+  walletCoinsEl.textContent = userData.coins;
+  dailyAdsCountEl.textContent = userData.adsWatched;
+  localStorage.setItem('luckyUser', JSON.stringify(userData));
+}
+updateUI();
+
+// Navigation Setup
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+    
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).classList.add('active');
+  });
+});
+
+// Admin View Toggle
+document.getElementById('adminToggleBtn').addEventListener('click', () => {
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  document.getElementById('adminView').classList.add('active');
+  loadAdminData();
+});
+
+// AdMob Reward System Simulation/Hook
+function showRewardedAd(callback) {
+  // If native AdMob available
+  if (window.admob && admob.rewarded) {
+    admob.rewarded.show().then(callback);
+  } else {
+    // Fallback simulation for Web View
+    alert("Ad Playing... (AdMob Ready)");
+    setTimeout(callback, 1000);
+  }
 }
 
-function changeAvatar(gender) {
-    const img = gender === 'male' ? 
-        "https://cdn-icons-png.flaticon.com/512/4140/4140048.png" : 
-        "https://cdn-icons-png.flaticon.com/512/4140/4140047.png";
-    document.getElementById('main-avatar').src = img;
-    document.getElementById('big-avatar').src = img;
+function giveReward(coins) {
+  userData.coins += coins;
+  userData.adsWatched += 1;
+  updateUI();
+  
+  rewardCoinText.textContent = `+${coins}`;
+  rewardModal.style.display = 'flex';
 }
 
-// AdMob Simulation for Interstitial
-function showInterstitial() {
-    // In real AdMob, you'd call the SDK here
-    runAdSequence(1, () => { console.log("Interstitial finished"); });
+document.getElementById('closeModalBtn').addEventListener('click', () => {
+  rewardModal.style.display = 'none';
+});
+
+// Watch Ad Button
+document.getElementById('watchAdBtn').addEventListener('click', () => {
+  showRewardedAd(() => giveReward(10));
+});
+
+// Spin Game
+document.getElementById('spinBtn').addEventListener('click', () => {
+  if (userData.adsWatched >= 30) {
+    alert("Daily limit reached!");
+    return;
+  }
+  showRewardedAd(() => {
+    const wheel = document.getElementById('wheel');
+    const randomDegree = 1800 + Math.floor(Math.random() * 360);
+    wheel.style.transform = `rotate(${randomDegree}deg)`;
+    
+    setTimeout(() => {
+      giveReward(15);
+    }, 3000);
+  });
+});
+
+// Flip Cards (1 Unlocked, 2 Locked)
+document.querySelectorAll('.flip-card').forEach((card, idx) => {
+  card.addEventListener('click', () => {
+    if (card.classList.contains('flipped')) return;
+
+    if (card.classList.contains('locked')) {
+      if (confirm("Watch Ad to unlock this card?")) {
+        showRewardedAd(() => {
+          card.classList.remove('locked');
+          card.classList.add('flipped');
+          document.getElementById(`cardResult${idx}`).textContent = "+20";
+          giveReward(20);
+        });
+      }
+    } else {
+      card.classList.add('flipped');
+      document.getElementById(`cardResult${idx}`).textContent = "+10";
+      giveReward(10);
+    }
+  });
+});
+
+// Withdraw System
+document.getElementById('withdrawForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const method = document.getElementById('payoutMethod').value;
+  const details = document.getElementById('payoutDetails').value;
+  const coins = parseInt(document.getElementById('payoutCoins').value);
+
+  if (coins > userData.coins) {
+    alert("Insufficient Balance!");
+    return;
+  }
+
+  userData.coins -= coins;
+  updateUI();
+
+  withdrawRequests.push({
+    id: Date.now(),
+    userId: userData.id,
+    methodDetails: `${method}: ${details}`,
+    coins: coins,
+    status: 'Pending'
+  });
+  localStorage.setItem('withdrawRequests', JSON.stringify(withdrawRequests));
+
+  alert("Withdrawal request submitted successfully!");
+});
+
+// Admin Panel Functions
+function loadAdminData() {
+  // Load Users
+  const userTable = document.getElementById('adminUserTable');
+  userTable.innerHTML = allUsers.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.coins}</td>
+      <td>${u.referCode}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="addCoinsAdmin('${u.id}')">+50</button></td>
+    </tr>
+  `).join('');
+
+  // Load Withdrawals
+  const withdrawTable = document.getElementById('adminWithdrawTable');
+  withdrawTable.innerHTML = withdrawRequests.map(w => `
+    <tr>
+      <td>${w.userId}</td>
+      <td>${w.methodDetails}</td>
+      <td>${w.coins}</td>
+      <td><strong>${w.status}</strong></td>
+      <td>
+        ${w.status === 'Pending' ? `
+          <button class="btn btn-primary btn-sm" onclick="updateWithdraw(${w.id}, 'Approved')">Approve</button>
+        ` : 'Done'}
+      </td>
+    </tr>
+  `).join('');
 }
+
+window.updateWithdraw = function(id, status) {
+  withdrawRequests = withdrawRequests.map(w => w.id === id ? {...w, status} : w);
+  localStorage.setItem('withdrawRequests', JSON.stringify(withdrawRequests));
+  loadAdminData();
+};
+
+window.addCoinsAdmin = function(userId) {
+  userData.coins += 50;
+  updateUI();
+  loadAdminData();
+};
+
+// Save AdMob Settings
+document.getElementById('saveAdmobBtn').addEventListener('click', () => {
+  admobConfig.appId = document.getElementById('admAppId').value;
+  admobConfig.rewardedId = document.getElementById('admRewardedId').value;
+  localStorage.setItem('admobConfig', JSON.stringify(admobConfig));
+  alert("AdMob Settings Saved!");
+});
